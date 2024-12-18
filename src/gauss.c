@@ -1,61 +1,52 @@
 #include "gauss.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 
 /**
- * Zwraca 0 - elimnacja zakonczona sukcesem
+ * Zwraca 0 - eliminacja zakonczona sukcesem
  * Zwraca 1 - macierz osobliwa - dzielenie przez 0
  */
-typedef struct {
-    int rows;
-    int cols;
-    double **data;
-} Matrix;
-
 int eliminate(Matrix *mat, Matrix *b) {
-    int n = mat->rows;
+    int r = mat->r;
+    int c = mat->c;
+    double **A = mat->data;
+    double **B = b->data;
 
-    if (mat->cols != n || b->rows != n || b->cols != 1) {
-        fprintf(stderr, "Nieprawidłowe wymiary macierzy\n");
-        return -1; // Kod błędu dla niezgodności wymiarów
-    }
-
-    for (int k = 0; k < n; ++k) {
-        // Wybór elementu głównego (pivot)
-        double max = fabs(mat->data[k][k]);
+    for (int k = 0; k < r; k++) {
+        // Znajdowanie maksymalnego elementu w kolumnie dla stabilnosci numerycznej
         int maxRow = k;
-        for (int i = k + 1; i < n; ++i) {
-            if (fabs(mat->data[i][k]) > max) {
-                max = fabs(mat->data[i][k]);
+        for (int i = k + 1; i < r; i++) {
+            if (fabs(A[i][k]) > fabs(A[maxRow][k])) {
                 maxRow = i;
             }
         }
 
-        // Zamiana wierszy
+        // Sprawdzenie, czy macierz jest osobliwa
+        if (fabs(A[maxRow][k]) < 1e-9) {
+            return 1; // Macierz osobliwa
+        }
+
+        // Zamiana wierszy w A i B
         if (maxRow != k) {
-            double *temp = mat->data[k];
-            mat->data[k] = mat->data[maxRow];
-            mat->data[maxRow] = temp;
+            double *temp = A[k];
+            A[k] = A[maxRow];
+            A[maxRow] = temp;
 
-            double tempB = b->data[k][0];
-            b->data[k][0] = b->data[maxRow][0];
-            b->data[maxRow][0] = tempB;
+            temp = B[k];
+            B[k] = B[maxRow];
+            B[maxRow] = temp;
         }
 
-        // Sprawdzenie czy macierz jest osobliwa
-        if (fabs(mat->data[k][k]) < 1e-12) {
-            fprintf(stderr, "Macierz osobliwa\n");
-            return 1; // Kod błędu dla macierzy osobliwej
-        }
-
-        // Eliminacja zmiennych
-        for (int i = k + 1; i < n; ++i) {
-            double factor = mat->data[i][k] / mat->data[k][k];
-            for (int j = k; j < n; ++j) {
-                mat->data[i][j] -= factor * mat->data[k][j];
+        // Eliminacja wierszami
+        for (int i = k + 1; i < r; i++) {
+            double factor = A[i][k] / A[k][k];
+            for (int j = k; j < c; j++) {
+                A[i][j] -= factor * A[k][j];
             }
-            b->data[i][0] -= factor * b->data[k][0];
+            B[i][0] -= factor * B[k][0];
         }
     }
-
-return 0;
+    return 0;
 }
 
